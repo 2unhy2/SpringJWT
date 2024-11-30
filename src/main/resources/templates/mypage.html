@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>마이페이지</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .info {
+            margin: 20px 0;
+        }
+        .info label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .info p {
+            margin: 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .action {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .action input {
+            padding: 10px;
+            font-size: 14px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .action button {
+            padding: 10px 20px;
+            font-size: 14px;
+            background-color: #100b0b;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .action button:hover {
+            background-color: #557197;
+        }
+        .logout {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .logout button {
+            padding: 10px 20px;
+            font-size: 14px;
+            background-color: #100b0b;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .logout button:hover {
+            background-color: #557197;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>마이페이지</h1>
+
+    <!-- 사용자 정보 -->
+    <div class="info">
+        <label>닉네임:</label>
+        <p id="nickname">불러오는 중...</p>
+    </div>
+    <div class="info">
+        <label>사용자 이름:</label>
+        <p id="username">불러오는 중...</p>
+    </div>
+    <div class="info">
+        <label>대학 이름:</label>
+        <p id="universityName">불러오는 중...</p>
+    </div>
+    <div class="info">
+        <label>대학 이메일:</label>
+        <p id="universityEmail">불러오는 중...</p>
+    </div>
+
+    <!-- 닉네임 변경 -->
+    <div class="action">
+        <input type="text" id="newNickname" placeholder="새 닉네임 입력">
+        <button id="updateNickname">닉네임 변경</button>
+    </div>
+
+    <!-- 로그아웃 -->
+    <div class="logout">
+        <button id="logoutButton">로그아웃</button>
+    </div>
+</div>
+
+<script>
+    // JWT 토큰 가져오기
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        alert('로그인이 필요합니다.');
+        window.location.href = '/login-page'; // 로그인 페이지로 이동
+    } else {
+        // 사용자 정보 요청
+        fetch('/api/MyPage', {
+            method: 'GET',
+            credentials: 'include', // 쿠키 포함
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('사용자 정보를 불러올 수 없습니다.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // 사용자 정보 표시
+                document.getElementById('nickname').textContent = data.nickname;
+                document.getElementById('username').textContent = data.username;
+                document.getElementById('universityName').textContent = data.universityName;
+                document.getElementById('universityEmail').textContent = data.universityEmail;
+            })
+            .catch(error => {
+                console.error('사용자 정보 요청 오류:', error);
+                alert('사용자 정보를 불러오는 중 문제가 발생했습니다.');
+                window.location.href = '/login-page';
+            });
+
+        // 닉네임 변경 처리
+        document.getElementById('updateNickname').addEventListener('click', async function() {
+            const newNickname = document.getElementById('newNickname').value;
+
+            if (!newNickname) {
+                alert('새 닉네임을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/MyPage/edit', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ nickname: newNickname }),
+                });
+
+                if (response.ok) {
+                    alert('닉네임이 성공적으로 변경되었습니다.');
+                    document.getElementById('nickname').textContent = newNickname;
+                    document.getElementById('newNickname').value = '';
+                } else {
+                    const errorData = await response.json();
+                    alert(`닉네임 변경 실패: ${errorData.message}`);
+                }
+            } catch (error) {
+                console.error('닉네임 변경 오류:', error);
+                alert('닉네임 변경 중 문제가 발생했습니다.');
+            }
+        });
+
+        // 로그아웃 처리
+        document.getElementById('logoutButton').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/MyPage/logout', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (response.ok) {
+                    alert('로그아웃되었습니다.');
+                    localStorage.removeItem('token'); // JWT 토큰 삭제
+                    window.location.href = '/login-page'; // 로그인 페이지로 리다이렉트
+                } else {
+                    alert('로그아웃 실패');
+                }
+            } catch (error) {
+                console.error('로그아웃 오류:', error);
+                alert('로그아웃 중 문제가 발생했습니다.');
+            }
+        });
+    }
+</script>
+</body>
+</html>

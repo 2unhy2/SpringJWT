@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>메인 페이지</title>
+</head>
+<body>
+<h1>메인 페이지</h1>
+<p>환영합니다! 아래 버튼을 눌러 마이페이지로 이동하세요.</p>
+<button id="goToMyPage">마이페이지로 이동</button>
+
+<script>
+    document.getElementById('goToMyPage').addEventListener('click', function() {
+        const token = localStorage.getItem('token'); // JWT 토큰 가져오기
+
+        if (!token) {
+            alert('로그인이 필요합니다.');
+            window.location.href = '/login-page'; // 로그인 페이지로 이동
+            return;
+        }
+
+        // 마이페이지로 이동
+        window.location.href = '/MyPage';
+    });
+</script>
+</body>
+</html>

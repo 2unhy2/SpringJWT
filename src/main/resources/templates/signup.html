@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .form-container {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #100b0b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #333;
+        }
+        .message {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+<div class="form-container">
+    <h2>회원가입</h2>
+    <div class="form-group">
+        <label for="username">사용자 이름</label>
+        <input type="text" id="username" placeholder="사용자 이름 입력">
+    </div>
+    <div class="form-group">
+        <label for="password">비밀번호</label>
+        <input type="password" id="password" placeholder="비밀번호 입력">
+    </div>
+    <div class="form-group">
+        <label for="email">이메일</label>
+        <input type="email" id="email" placeholder="이메일 입력">
+    </div>
+    <div class="form-group">
+        <label for="universityName">학교 이름</label>
+        <input type="text" id="universityName" placeholder="학교 이름 입력">
+    </div>
+    <button id="sendCode">인증 코드 발송</button>
+
+    <!-- 인증번호 입력 및 확인 버튼 -->
+    <div class="form-group">
+        <label for="verificationCode">인증번호</label>
+        <input type="text" id="verificationCode" placeholder="인증번호 입력">
+    </div>
+    <button id="verifyCode">인증하기</button>
+
+    <div class="message" id="message"></div>
+</div>
+
+<script th:inline="javascript">
+    const API_BASE_URL = "http://localhost:8080";
+    // 인증 코드 발송 버튼 이벤트
+    document.getElementById("sendCode").addEventListener("click", async () => {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const universityName = document.getElementById("universityName").value.trim();
+        const messageDiv = document.getElementById("message");
+
+        if (!username || !password || !email || !universityName) {
+            messageDiv.textContent = "모든 필드를 입력하세요.";
+            messageDiv.classList.add("error");
+            return;
+        }
+
+
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/join/request`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    username,
+                    password,
+                    universityEmail: email,
+                    universityName,
+                }),
+            });
+
+            const message = await response.text();
+            if (response.ok) {
+                messageDiv.textContent = message; // 성공 메시지
+                messageDiv.classList.add("success");
+                messageDiv.classList.remove("error");
+            } else {
+                messageDiv.textContent = `오류: ${message}`; // 실패 메시지
+                messageDiv.classList.add("error");
+                messageDiv.classList.remove("success");
+            }
+        } catch (error) {
+            messageDiv.textContent = `서버와 통신 중 오류가 발생했습니다: ${error.message}`;
+            messageDiv.classList.add("error");
+        }
+    });
+
+    // 인증하기 버튼 이벤트
+    document.getElementById("verifyCode").addEventListener("click", async () => {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const universityName = document.getElementById("universityName").value.trim();
+        const verificationCode = document.getElementById("verificationCode").value.trim();
+        const messageDiv = document.getElementById("message");
+
+        if (!username || !password || !email || !universityName || !verificationCode) {
+            messageDiv.textContent = "모든 필드를 입력하세요.";
+            messageDiv.classList.add("error");
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/join/verify`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    username,
+                    password,
+                    universityEmail: email,
+                    universityName,
+                    verificationCode: parseInt(verificationCode, 10), // 숫자로 변환
+                }),
+            });
+
+            const message = await response.text();
+            if (response.ok) {
+                messageDiv.textContent = `인증 성공: ${message}`;
+                messageDiv.classList.add("success");
+                messageDiv.classList.remove("error");
+                // 2초 후 로그인 페이지로 이동
+                setTimeout(() => {
+                    window.location.href = "/login-page";
+                }, 2000);
+            } else {
+                messageDiv.textContent = `인증 실패: ${message}`;
+                messageDiv.classList.add("error");
+                messageDiv.classList.remove("success");
+            }
+        } catch (error) {
+            messageDiv.textContent = `서버와 통신 중 오류가 발생했습니다: ${error.message}`;
+            messageDiv.classList.add("error");
+        }
+    });
+
+</script>
+</body>
+</html>
